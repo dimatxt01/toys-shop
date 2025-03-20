@@ -29,7 +29,7 @@ export function ForwardProvider({ children }: { children: React.ReactNode }) {
     // Create and load script only if it doesn't exist
     if (!scriptRef.current) {
       const script = document.createElement('script')
-      script.src = 'http://127.0.0.1:4000/forward.js'
+      script.src = 'https://cdn.pci.getfwd.dev/sdk/forward.js'
       script.async = true
       script.onload = () => setIsLoaded(true)
       
