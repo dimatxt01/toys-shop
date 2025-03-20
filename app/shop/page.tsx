@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import Image from "next/image"
 import { SiteHeader } from "@/components/site-header"
@@ -226,7 +226,9 @@ function ShopPageContent() {
 export default function ShopPage() {
   return (
     <CartProvider>
+      <Suspense fallback={<div>Loading...</div>}>
       <ShopPageContent />
+      </Suspense>
     </CartProvider>
   )
 }

@@ -5,7 +5,7 @@ import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Toast, ToastVariant } from "@/hooks/use-toast"
 
-interface ToastProps {
+export interface ToastProps {
   toast: Toast
   onDismiss: (id: string) => void
 }

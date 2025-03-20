@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { Suspense, useEffect, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
@@ -280,7 +280,9 @@ function CheckoutPageContent() {
 export default function CheckoutPage() {
   return (
     <CartProvider>
+          <Suspense fallback={<div>Loading...</div>}>
       <CheckoutPageContent />
+      </Suspense>
     </CartProvider>
   )
 }
