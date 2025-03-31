@@ -65,7 +65,7 @@ export default function Home() {
                 />
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#008273] mb-6">
-                Dima's Forward Shop
+                Dima's Toys Shop
               </h1>
               <p className="text-lg md:text-xl text-gray-600 mb-10">
                 Select your partner account to support important causes around the world
@@ -104,7 +104,7 @@ export default function Home() {
                     onClick={handleProceedToStore}
                     disabled={!partnerId}
                   >
-                    Browse Initiatives
+                    Browse Pistols 
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </CardFooter>

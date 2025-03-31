@@ -24,8 +24,6 @@ const axiosInstance = axios.create({
   );
 
   export async function POST(req: NextRequest) {
-    console.log("Request body:", req.body);
-
     try {
       const requestData = await req.json();
      

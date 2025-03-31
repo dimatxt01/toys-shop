@@ -16,6 +16,7 @@ import { Minus, Plus, Trash2, ShoppingBag, Loader2 } from "lucide-react"
 import { useCart } from "@/components/cart-context"
 import { PaymentMethodDialog } from "@/components/payment-method-dialog"
 import { useToast } from "@/hooks/use-toast"
+import { envData } from "@/environment"
 
 interface CartDrawerProps {
   isOpen: boolean
@@ -33,19 +34,19 @@ export function CartDrawer({ isOpen, onClose, accountId }: CartDrawerProps) {
   const { toast } = useToast()
 
   const handleCheckout = () => {
-    if (items.length === 0) {
+    if (!accountId) {
       toast({
-        title: "Cart is empty",
-        description: "Please add items to your cart before checking out.",
+        title: "Account required",
+        description: "Please select an account before proceeding to checkout.",
         variant: "destructive"
       })
       return
     }
 
-    if (!accountId) {
+    if (items.length === 0) {
       toast({
-        title: "Account required",
-        description: "Please select an account before proceeding to checkout.",
+        title: "Cart is empty",
+        description: "Please add items to your cart before checking out.",
         variant: "destructive"
       })
       return
@@ -80,17 +81,19 @@ export function CartDrawer({ isOpen, onClose, accountId }: CartDrawerProps) {
         }),
       })
       
-      const paymentMethodData = await paymentMethodResponse.json()
-      
       if (!paymentMethodResponse.ok) {
-        throw new Error(paymentMethodData.error || 'Failed to create payment method intent')
+        throw new Error('Failed to create payment method intent')
       }
       
+      const paymentMethodData = await paymentMethodResponse.json()
       console.log('Payment method intent API response:', paymentMethodData)
+
+      // Close dialogs
+      setIsPaymentDialogOpen(false)
+      onClose()
       
-      
-      // // Redirect to checkout page with partner ID and account ID
-      router.push(`/checkout?payment_method_secret=${paymentMethodData.client_secret}&partner=${partnerId}&account=${accountId}`)
+      // Redirect to checkout page with payment method intent data
+      router.push(`/checkout?partner=${partnerId}&account=${accountId}&secret=${paymentMethodData.client_secret}`)
       
     } catch (error) {
       console.error('Error processing payment:', error)
@@ -222,6 +225,8 @@ export function CartDrawer({ isOpen, onClose, accountId }: CartDrawerProps) {
         onClose={() => setIsPaymentDialogOpen(false)}
         onSelectPaymentMethod={handleSelectPaymentMethod}
         isLoading={isProcessing}
+        partnerId={partnerId ?? undefined}
+        accountId={accountId}
       />
     </>
   )

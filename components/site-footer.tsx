@@ -15,7 +15,7 @@ export function SiteFooter() {
                 width={40} 
                 height={40}
               />
-              <span className="font-bold text-xl">Dima's Forward Shop</span>
+              <span className="font-bold text-xl">Dima's Toys Shop</span>
             </Link>
           </div>
 
@@ -23,7 +23,7 @@ export function SiteFooter() {
         
         <div className="mt-12 pt-8 border-t border-gray-700 flex flex-col md:flex-row justify-between items-center">
           <p className="text-sm text-gray-300">
-            &copy; {new Date().getFullYear()} Dima's Forward Shop. All rights reserved.
+            &copy; {new Date().getFullYear()} Dima's Toys Shop. All rights reserved.
           </p>
           
           <div className="flex items-center gap-4 mt-4 md:mt-0">

@@ -26,35 +26,30 @@ function CheckoutPageContent() {
   const searchParams = useSearchParams()
   const partnerId = searchParams?.get("partner")
   const accountId = searchParams?.get("account")
-  const paymentMethodIntentSecret = searchParams?.get("payment_method_secret")
+  const paymentMethodIntentSecret = searchParams?.get("secret")
+  const pmId = searchParams?.get("payment_method_id");
   const { items, totalPrice, clearCart } = useCart()
   const { toast } = useToast()
 
   // Payment state
   const [paymentIntentId, setPaymentIntentId] = useState("")
   const [paymentIntent, setPaymentIntent] = useState<any>(null);
-  const [checkout, setCheckout] = useState(false)
-  const [payment, setPayment] = useState<PaymentState>({})
+  const [paymentMethod, setPaymentMethod] = useState<any>(null);
   const [loading, setLoading] = useState(false)
-  
-  // Ref for payment intent ID to ensure we always have latest in callbacks
-  const paymentIntentIdRef = useRef(paymentIntentId)
-  useEffect(() => {
-    paymentIntentIdRef.current = paymentIntentId
-  }, [paymentIntentId])
-
+  const [payment, setPayment] = useState<PaymentState>({})
 
   const apiKey = partnerApiKeys[partnerId ?? ''];
 
-  const pay = async (token: string) => {
+  const pay = async (token: string, intentId?: string) => {
     try {
+      setLoading(true)
       const response = await fetch('/api/pay', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          payment_intent_id: paymentIntentIdRef.current,
+          payment_intent_id: intentId || paymentIntentId,
           payment_method_id: token,
           partner_id: partnerId,
           account_id: accountId
@@ -67,42 +62,61 @@ function CheckoutPageContent() {
 
       const data = await response.json()
       setPayment(data)
-      
-      
-      // Clear cart
       clearCart()
     } catch (error) {
       console.error('Payment error:', error)
       throw error
+    } finally {
+      setLoading(false)
     }
   }
 
   const createPaymentIntent = async () => {
     setLoading(true)
     try {
-
-      let match = paymentMethodIntentSecret?.match(/pmi_[a-zA-Z0-9]+/);
-      let pmiId;
-
-      if(match && match[0]) {
-        pmiId = match[0];
-      } 
-
-      const pmiResponse = await fetch(`/api/payment_method_intent/${pmiId}?secret=${paymentMethodIntentSecret}&partner_id=${partnerId}&account_id=${accountId}`,
-        {
+      let pmTypes;
+      
+      // If using stored payment method
+      if (pmId) {
+        const pm = await fetch(`/api/payment_method/${pmId}?partner_id=${partnerId}&account_id=${accountId}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
           },
-        }
-      )
+        });
 
-      if (!pmiResponse.ok) {
-        throw new Error('Failed to fetch payment method intent')
+        if (!pm.ok) {
+          throw new Error('Failed to fetch payment method')
+        }
+
+        const data = await pm.json();
+        setPaymentMethod(data);
+        pmTypes = [data.payment_method_type];
+      } 
+      // If using new payment method
+      else {
+        let match = paymentMethodIntentSecret?.match(/pmi_[a-zA-Z0-9]+/);
+        let pmiId = match?.[0];
+  
+        const pmiResponse = await fetch(
+          `/api/payment_method_intent/${pmiId}?secret=${paymentMethodIntentSecret}&partner_id=${partnerId}&account_id=${accountId}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        )
+  
+        if (!pmiResponse.ok) {
+          throw new Error('Failed to fetch payment method intent')
+        }
+  
+        const data = await pmiResponse.json();
+        console.log('PMI data:', data);
+        pmTypes = data.payment_method_types;
       }
 
-      const data = await pmiResponse.json();
-   
       // Create payment intent 
       const response = await fetch('/api/payment_intent', {
         method: 'POST',
@@ -114,9 +128,10 @@ function CheckoutPageContent() {
           account_id: accountId,
           amount: totalPrice + 1, // Add $1 processing fee
           split: true,
-          payment_method_types: data.payment_method_types || ['card'], // Default to card if not provided
+          payment_method_types: pmTypes || ['card'], // Default to card if not provided
         }),
       })
+
       if (!response.ok) {
         throw new Error('Failed to create payment intent')
       }
@@ -125,7 +140,12 @@ function CheckoutPageContent() {
       setPaymentIntentId(intent.id)
       setPaymentIntent(intent)
       
-      console.log('Payment intent created:', intent)
+      // If using stored payment method, process payment immediately
+      if (pmId) {
+        console.log('Processing payment with stored payment method')
+        await pay(pmId, intent.id) // Pass the intent ID directly
+      }
+
     } catch (error) {
       console.error('Error creating payment intent:', error)
       toast({
@@ -191,7 +211,7 @@ function CheckoutPageContent() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Amount:</span>
-                      <span className="font-medium">${(payment.amount || 0).toFixed(2)}</span>
+                      <span className="font-medium">${Number((payment.amount || 0 / 100 || 0).toFixed(2)) / 100}</span>
                     </div>
                     <Button 
                       asChild 
@@ -204,10 +224,10 @@ function CheckoutPageContent() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                   <div className="md:col-span-2">
-                    {paymentIntent ? (
+                    {paymentIntent && paymentMethodIntentSecret && !pmId ? (
                       <PaymentElement
                         apiKey={apiKey}
-                        clientSecret={paymentMethodIntentSecret ?? ''}
+                        clientSecret={paymentMethodIntentSecret}
                         amount={totalPrice + 1} // Add $1 processing fee
                         pay={pay}
                       />
@@ -215,19 +235,16 @@ function CheckoutPageContent() {
                       <Card className="p-6">
                         <Button
                           className="w-full bg-[#008273] hover:bg-[#006B5F]"
-                          onClick={() => {
-                            setCheckout(true)
-                            createPaymentIntent()
-                          }}
-                          disabled={checkout || loading}
+                          onClick={createPaymentIntent}
+                          disabled={loading}
                         >
                           {loading ? (
                             <>
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Initializing Payment...
+                              {pmId ? "Processing Payment..." : "Initializing Payment..."}
                             </>
                           ) : (
-                            "Proceed to Payment"
+                            pmId ? "Pay Now" : "Proceed to Payment"
                           )}
                         </Button>
                       </Card>
@@ -280,8 +297,8 @@ function CheckoutPageContent() {
 export default function CheckoutPage() {
   return (
     <CartProvider>
-          <Suspense fallback={<div>Loading...</div>}>
-      <CheckoutPageContent />
+      <Suspense fallback={<div>Loading...</div>}>
+        <CheckoutPageContent />
       </Suspense>
     </CartProvider>
   )

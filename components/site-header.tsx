@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { Home, Menu, Globe, X } from "lucide-react"
+import { Home, Menu, Globe, X , CreditCard} from "lucide-react"
 import { useState } from "react"
 
 import { cn } from "@/lib/utils"
@@ -22,8 +22,14 @@ export function SiteHeader() {
       active: pathname === "/",
     },
     {
+      href: "/payment-methods",
+      label: "Payment Methods",
+      icon: CreditCard,
+      active: pathname === "/payment-methods",
+    },
+    {
       href: "/shop",
-      label: "Global Initiatives",
+      label: "Best Toys",
       icon: Globe,
       active: pathname === "/shop" || pathname?.startsWith("/shop/"),
     },
@@ -41,7 +47,7 @@ export function SiteHeader() {
               height={40} 
               priority
             />
-            <span className="font-bold text-xl text-forward-green">Dima's Forward Shop</span>
+            <span className="font-bold text-xl text-forward-green">Dima's Toys Shop</span>
           </Link>
         </div>
 

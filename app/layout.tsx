@@ -8,8 +8,8 @@ import { ForwardProvider } from './forward-provider'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: "Dima's Forward Shop",
-  description: "Support global causes and initiatives at Dima's Forward Shop",
+  title: "Dima's Toys Shop",
+  description: "Support global causes and initiatives at Dima's Toys Shop",
   icons: {
     icon: '/favicon.ico',
   },
